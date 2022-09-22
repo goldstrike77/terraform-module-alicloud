@@ -7,8 +7,8 @@ locals {
         cidr = t.cidr
         zone_id = t.zone_id
         vpc_name = s.name
-        description = s.description
-        tags = s.tags
+        description = lookup(t, "description", null)
+        tags = lookup(t, "tags", null)
       }
     ]
   ])
