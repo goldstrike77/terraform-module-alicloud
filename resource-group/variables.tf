@@ -1,0 +1,1 @@
+variable "res_spec" {}
