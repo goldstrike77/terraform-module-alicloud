@@ -6,33 +6,22 @@ data "alicloud_resource_manager_resource_groups" "resource_group" {
 
 # 获取交换机ID。
 data "alicloud_vswitches" "vswitches" {
-  for_each = { for s in var.res_spec.kvstore : format("%s", s.vswitch_name) => s if can(s.vswitch_name) }
+  for_each = { for s in var.res_spec.kvstore : format("%s", s.vswitch_name) => s... if can(s.vswitch_name) }
   status = "Available"
   vswitch_name = each.key
 }
 
 # 获取安全组ID。
 data "alicloud_security_groups" "security_groups" {
-  for_each = { for s in var.res_spec.kvstore : format("%s", s.security_group_name) => s if can(s.security_group_name) }
+  for_each = { for s in var.res_spec.kvstore : format("%s", s.security_group_name) => s... if can(s.security_group_name) }
   name_regex = each.key
-}
-
-# 创建 Redis / Memcache 随机密码。
-resource "random_password" "password" {
-  for_each = { for s in local.kvstore_flat : format("%s", s.name) => s }
-  length = 16
-  min_lower = 1
-  min_numeric = 1
-  min_upper = 1
-  special = false
-  keepers = { name = each.key }
 }
 
 # 创建 Redis / Memcache 实例。
 resource "alicloud_kvstore_instance" "kvstore_instance" {
   for_each = { for s in local.kvstore_flat : format("%s", s.name) => s }
   db_instance_name = each.key
-  password = random_password.password[each.key].result
+  password = each.value.password
   instance_class = each.value.instance_class
   capacity = each.value.capacity
   zone_id = each.value.zone_id
@@ -52,21 +41,20 @@ resource "alicloud_kvstore_instance" "kvstore_instance" {
   maintain_start_time = each.value.maintain_start_time
   maintain_end_time = each.value.maintain_end_time
   resource_group_id = data.alicloud_resource_manager_resource_groups.resource_group.groups.0.id
-  ssl_enable = each.value.ssl_enable
-  dry_run = false
+#  ssl_enable = each.value.ssl_enable
 }
 
 # 创建 Redis / Memcache 公网连接。
 resource "alicloud_kvstore_connection" "kvstore_connection" {
   for_each = { for s in local.kvstore_flat : format("%s", s.name) => s if s.public }
-  connection_string_prefix = each.key
+  connection_string_prefix = alicloud_kvstore_instance.kvstore_instance[each.key].id
   instance_id = alicloud_kvstore_instance.kvstore_instance[each.key].id
   port = each.value.port
 }
 
 # 创建 Redis / Memcache 实例审计日志配置。
 resource "alicloud_kvstore_audit_log_config" "kvstore_audit_log_config" {
-  for_each = { for s in local.kvstore_flat : format("%s", s.name) => s }
+  for_each = { for s in local.kvstore_flat : format("%s", s.name) => s if s.db_audit }
   instance_id = alicloud_kvstore_instance.kvstore_instance[each.value.name].id
   db_audit = each.value.db_audit
   retention = each.value.retention
@@ -79,27 +67,3 @@ resource "alicloud_kvstore_backup_policy" "kvstore_backup_policy" {
   backup_period = each.value.backup_period
   backup_time = each.value.backup_time
 }
-
-## 创建 Redis / Memcache 随机密码。
-#resource "random_password" "password" {
-#  for_each = { for s in local.account_name_flat : format("%s-%s", s.name,s.account_name) => s }
-#  length = 16
-#  min_lower = 1
-#  min_numeric = 1
-#  min_special = 1
-#  min_upper = 1
-#  special = true
-#  override_special = "!#$%&*()-_=+[]{}<>:?"
-#  keepers = {
-#    name = each.value.name
-#    account_name = each.value.account_name
-#  }
-#}
-#
-## 创建 Redis / Memcache 账户。
-#resource "alicloud_kvstore_account" "kvstore_account" {
-#  for_each = { for s in local.kvstore_account_flat : format("%s-%s", s.name,s.account_name) => s }
-#  account_name = each.value.account_name
-#  account_password = random_password.password["${each.value.name}-${each.value.account_name}"].result
-#  instance_id = alicloud_kvstore_instance.kvstore_instance[each.value.name].id
-#}

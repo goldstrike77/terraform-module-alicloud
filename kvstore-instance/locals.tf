@@ -4,6 +4,7 @@ locals {
     for s in var.res_spec.kvstore[*] : [
       for t in s.db_instance_name : {
         name = t
+        password = lookup(s, "password", null)
         port = lookup(s, "port", "6379")
         public = lookup(s, "public", false)
         instance_class = lookup(s, "instance_class", "redis.master.small.default")
@@ -18,28 +19,18 @@ locals {
         vswitch_name = s.vswitch_name
         engine_version = lookup(s, "engine_version", "4.0")
         tags = lookup(s, "tags", {})
-        security_ips = lookup(s, "security_ips", [])
+        security_ips = lookup(s, "security_ips", "127.0.0.1")
         security_group_name = lookup(s, "security_group_name", "")
-        vpc_auth_mode = s.vpc_auth_mode
+        vpc_auth_mode = lookup(s, "vpc_auth_mode", "Open")
         config = lookup(s, "config", {})
         maintain_start_time = lookup(s, "maintain_start_time", "16:00Z")
         maintain_end_time = lookup(s, "maintain_end_time", "20:00Z")
-        ssl_enable = lookup(s, "ssl_enable", "Enable")
+#        ssl_enable = lookup(s, "ssl_enable", "Disable")
         db_audit = lookup(s, "db_audit", false)
         retention = lookup(s, "retention", 7)
         backup_period =  lookup(s, "backup_period", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
         backup_time = lookup(s, "backup_time", "20:00Z-21:00Z")
       }
-    ]
-  ])
-  kvstore_account_flat = flatten([
-    for s in var.res_spec.kvstore[*] : [
-      for t in s.db_instance_name[*] : [
-        for k in t.account_name : {
-          name = t
-          account_name = k
-        }
-      ] if can(t.account_name)
     ]
   ])
 }
