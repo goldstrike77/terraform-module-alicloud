@@ -1,11 +1,25 @@
 # 将通过变量传入的元数据映射投影到每个变量都有单独元素的集合。
 locals {
-  secondary_cidr_flat = flatten([
-    for s in var.res_spec.vpc[*] : [
-      for t in s.secondary_cidr : {
-        vpc_name = s.name
-        secondary_cidr_block = t
+  resource_manager_resource_group_flat = flatten([
+    for s in var.resources[*].resource_manager_resource_group : {
+      resource_group_name = lookup(s, "resource_group_name", s.display_name)
+      display_name        = s.display_name
+    }
+  ])
+  vpc_flat = flatten([
+    for s in var.resources[*] : [
+      for t in s.vpc[*] : {
+        display_name         = s.resource_manager_resource_group.display_name
+        cidr_block           = lookup(t, "cidr_block", null)
+        classic_link_enabled = lookup(t, "classic_link_enabled", false)
+        description          = lookup(t, "description", null)
+        dry_run              = lookup(t, "dry_run", false)
+        enable_ipv6          = lookup(t, "enable_ipv6", false)
+        ipv6_isp             = lookup(t, "ipv6_isp", "BGP")
+        tags                 = lookup(t, "tags", {})
+        user_cidrs           = lookup(t, "user_cidrs", null)
+        vpc_name             = lookup(t, "vpc_name", null)
       }
-    ] if can(s.secondary_cidr)
+    ]
   ])
 }

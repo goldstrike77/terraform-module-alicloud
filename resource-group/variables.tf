@@ -1,1 +1,0 @@
-variable "res_spec" {} # 定义变量块
