@@ -15,20 +15,23 @@ locals {
       }
     ]
   ])
-  vswitch_flat = flatten([
+  vpc_peer_connection_flat = flatten([
     for s in var.resources[*] : [
       for t in s.vpc[*] : [
-        for u in t.vswitch : {
+        for u in t.vpc_peer_connection : {
+          display_name         = s.resource_manager_resource_group.display_name
           vpc_name             = t.vpc_name
-          cidr_block           = u.cidr_block
+          accepting_vpc        = u.accepting_vpc
+          accepting_region_id  = u.accepting_region_id
+          accepting_ali_uid    = u.accepting_ali_uid
+          bandwidth            = lookup(u, "bandwidth", null)
+          peer_connection_name = lookup(u, "peer_connection_name", "pcc-${t.vpc_name}-peer-${u.accepting_vpc}")
           description          = lookup(u, "description", null)
-          zone_id              = lookup(u, "zone_id", null)
-          enable_ipv6          = lookup(u, "enable_ipv6", false)
-          ipv6_cidr_block_mask = lookup(u, "ipv6_cidr_block_mask", null)
+          status               = lookup(u, "status", null)
           tags                 = lookup(u, "tags", {})
-          vswitch_name         = lookup(u, "vswitch_name", null)
+          dry_run              = lookup(u, "dry_run", false)
         }
-      ] if can(t.vswitch)
+      ] if can(t.vpc_peer_connection)
     ]
   ])
 }

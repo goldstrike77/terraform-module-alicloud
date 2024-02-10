@@ -45,27 +45,27 @@ resource "alicloud_nat_gateway" "nat_gateway" {
 
 # 添加弹性公网IP。
 resource "alicloud_eip_address" "eip_address" {
-  for_each            = { for s in local.nat_gateway_flat : format("%s", s.eip_address_name) => s if s.network_type == "internet" }
-  activity_id         = each.value.eip_activity_id
-  address_name        = each.value.eip_address_name
-  auto_pay            = each.value.eip_auto_pay
-  bandwidth           = each.value.eip_bandwidth
-  deletion_protection = each.value.eip_deletion_protection
-  description         = each.value.eip_description
-  #high_definition_monitor_log_status = each.value.eip_high_definition_monitor_log_status
-  internet_charge_type = each.value.eip_internet_charge_type
-  ip_address           = each.value.eip_ip_address
-  isp                  = each.value.eip_isp
-  #log_project                        = each.value.eip_log_project
-  #log_store                          = each.value.eip_log_store
-  payment_type              = each.value.eip_payment_type
-  period                    = each.value.eip_period
-  pricing_cycle             = each.value.eip_pricing_cycle
-  public_ip_address_pool_id = each.value.eip_public_ip_address_pool_id
-  resource_group_id         = data.alicloud_resource_manager_resource_groups.resource_manager_resource_groups[each.value.display_name].groups.0.id
-  security_protection_types = each.value.eip_security_protection_types
-  tags                      = merge(var.tags, each.value.eip_tags)
-  zone                      = each.value.eip_zone
+  for_each                           = { for s in local.nat_gateway_flat : format("%s", s.eip_address_name) => s if s.network_type == "internet" }
+  activity_id                        = each.value.eip_activity_id
+  address_name                       = each.value.eip_address_name
+  auto_pay                           = each.value.eip_auto_pay
+  bandwidth                          = each.value.eip_bandwidth
+  deletion_protection                = each.value.eip_deletion_protection
+  description                        = each.value.eip_description
+  high_definition_monitor_log_status = each.value.eip_high_definition_monitor_log_status
+  internet_charge_type               = each.value.eip_internet_charge_type
+  ip_address                         = each.value.eip_ip_address
+  isp                                = each.value.eip_isp
+  log_project                        = each.value.eip_log_project
+  log_store                          = each.value.eip_log_store
+  payment_type                       = each.value.eip_payment_type
+  period                             = each.value.eip_period
+  pricing_cycle                      = each.value.eip_pricing_cycle
+  public_ip_address_pool_id          = each.value.eip_public_ip_address_pool_id
+  resource_group_id                  = data.alicloud_resource_manager_resource_groups.resource_manager_resource_groups[each.value.display_name].groups.0.id
+  security_protection_types          = each.value.eip_security_protection_types
+  tags                               = merge(var.tags, each.value.eip_tags)
+  zone                               = each.value.eip_zone
 }
 
 # 绑定弹性公网IP。
