@@ -43,7 +43,7 @@ resource "alicloud_security_group_rule" "security_group_rule" {
   policy                     = each.value.policy
   priority                   = each.value.priority
   cidr_ip                    = each.value.cidr_ip
-  source_security_group_id   = each.value.source_security_group != null ? data.alicloud_security_groups.security_groups[each.value.source_security_group[0]].groups.0.id : null
+  source_security_group_id   = each.value.source_security_group != null ? data.alicloud_security_groups.security_groups[each.value.source_security_group].ids : null
   source_group_owner_account = each.value.source_group_owner_account
   description                = each.value.description
   prefix_list_id             = each.value.prefix_list_id
