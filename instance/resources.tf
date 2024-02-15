@@ -163,3 +163,10 @@ resource "alicloud_ecs_network_interface_attachment" "ecs_network_interface_atta
   network_interface_id = alicloud_ecs_network_interface.ecs_network_interface[each.key].id
   instance_id          = alicloud_instance.instance[each.value.instance_name].id
 }
+
+# 附加密钥对。
+resource "alicloud_ecs_key_pair_attachment" "ecs_key_pair_attachment" {
+  for_each      = { for s in local.ecs_flat : format("%s", s.instance_name) => s if s.key_pair_name != null }
+  key_pair_name = each.value.key_pair_name
+  instance_ids  = [alicloud_instance.instance[each.key].id]
+}

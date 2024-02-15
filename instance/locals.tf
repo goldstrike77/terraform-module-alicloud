@@ -32,7 +32,7 @@ locals {
           internet_charge_type                = lookup(t, "internet_charge_type", "PayByTraffic")
           internet_max_bandwidth_out          = lookup(t, "internet_max_bandwidth_out", 0)
           host_name                           = lookup(t, "host_name", u)
-          password                            = t.password
+          password                            = lookup(t, "password", null)
           kms_encrypted_password              = lookup(t, "kms_encrypted_password", null)
           kms_encryption_context              = lookup(t, "kms_encryption_context", {})
           instance_charge_type                = lookup(t, "instance_charge_type", "PostPaid")
@@ -66,6 +66,7 @@ locals {
           launch_template_id                  = lookup(t, "launch_template_id", null)
           launch_template_name                = lookup(t, "launch_template_name", null)
           launch_template_version             = lookup(t, "launch_template_version", null)
+          key_pair_name                       = lookup(t, "key_pair_name", null)
         }
       ]
     ]
