@@ -66,7 +66,7 @@ locals {
             eip_security_protection_types          = lookup(v, "eip_security_protection_types", [])
             eip_tags                               = lookup(v, "eip_tags", {})
             eip_zone                               = lookup(v, "eip_zone", null)
-            snat_source_cidr                       = lookup(v, "snat_source_cidr", "0.0.0.0/0")
+            snat_source_cidr                       = lookup(v, "snat_source_cidr", "10.0.0.0/8")
           }
         ] if can(u.nat_gateway)
       ]

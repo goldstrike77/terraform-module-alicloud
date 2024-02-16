@@ -42,7 +42,7 @@ resource "alicloud_route_table_attachment" "route_table_attachment" {
 
 # 获取对等互联ID。
 data "alicloud_vpc_peer_connections" "vpc_peer_connections" {
-  for_each             = { for s in local.route_entry_flat : format("%s", s.nexthop) => s if s.nexthop != null && lower(s.nexthop_type) == "vpcpeer" }
+  for_each             = { for s in local.route_entry_flat : format("%s", s.nexthop) => s... if s.nexthop != null && lower(s.nexthop_type) == "vpcpeer" }
   peer_connection_name = each.key
   status               = "Activated"
 }
@@ -56,7 +56,7 @@ data "alicloud_instances" "instances" {
 
 # 添加对等互联路由条目。
 resource "alicloud_route_entry" "route_entry_vpcpeer" {
-  for_each              = { for s in local.route_entry_flat : format("%s-%s", s.route_table_name, s.nexthop_type) => s if s.nexthop != null && lower(s.nexthop_type) == "vpcpeer" }
+  for_each              = { for s in local.route_entry_flat : format("%s-%s-%s", s.route_table_name, s.nexthop_type, s.nexthop) => s if s.nexthop != null && lower(s.nexthop_type) == "vpcpeer" }
   route_table_id        = alicloud_route_table.route_table[each.value.route_table_name].id
   destination_cidrblock = each.value.destination_cidrblock
   nexthop_type          = each.value.nexthop_type
