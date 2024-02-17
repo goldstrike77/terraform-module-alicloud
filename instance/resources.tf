@@ -170,3 +170,28 @@ resource "alicloud_ecs_key_pair_attachment" "ecs_key_pair_attachment" {
   key_pair_name = each.value.key_pair_name
   instance_ids  = [alicloud_instance.instance[each.key].id]
 }
+
+# 配置整机备份。
+resource "alicloud_hbr_server_backup_plan" "hbr_server_backup_plan" {
+  for_each                    = { for s in local.ecs_hbr_flat : format("%s", s.instance_name) => s }
+  ecs_server_backup_plan_name = each.value.ecs_server_backup_plan_name
+  instance_id                 = alicloud_instance.instance[each.key].id
+  retention                   = each.value.retention
+  schedule                    = each.value.schedule
+  detail {
+    app_consistent        = lookup(each.value, "detail.app_consistent", true)
+    snapshot_group        = lookup(each.value, "detail.snapshot_group", true)
+    enable_fs_freeze      = lookup(each.value, "detail.enable_fs_freeze", false)
+    pre_script_path       = lookup(each.value, "detail.pre_script_path", null)
+    post_script_path      = lookup(each.value, "detail.post_script_path", null)
+    timeout_in_seconds    = lookup(each.value, "detail.timeout_in_seconds", 30)
+    disk_id_list          = lookup(each.value, "detail.disk_id_list", null)
+    do_copy               = lookup(each.value, "detail.do_copy", false)
+    destination_region_id = lookup(each.value, "detail.destination_region_id", null)
+    destination_retention = lookup(each.value, "detail.destination_retention", null)
+  }
+  disabled                = each.value.disabled
+  cross_account_type      = each.value.cross_account_type
+  cross_account_user_id   = each.value.cross_account_user_id
+  cross_account_role_name = each.value.cross_account_role_name
+}

@@ -18,11 +18,11 @@ locals {
           is_outdated                         = lookup(t, "is_outdated", false)
           security_group                      = lookup(t, "security_group", null)
           instance_name                       = u
-          system_disk_category                = lookup(t, "system_disk_category", "cloud_auto")
+          system_disk_category                = lookup(t, "system_disk_category", "cloud_essd")
           system_disk_name                    = lookup(t, "system_disk_name", "d-${u}")
           system_disk_description             = lookup(t, "system_disk_description", null)
           system_disk_size                    = lookup(t, "system_disk_size", 40)
-          system_disk_performance_level       = lookup(t, "system_disk_performance_level", "PL1")
+          system_disk_performance_level       = lookup(t, "system_disk_performance_level", "PL0")
           system_disk_auto_snapshot_policy_id = lookup(t, "system_disk_auto_snapshot_policy_id", null)
           system_disk_storage_cluster_id      = lookup(t, "system_disk_storage_cluster_id", null)
           system_disk_encrypted               = lookup(t, "system_disk_encrypted", false)
@@ -71,6 +71,23 @@ locals {
       ]
     ]
   ])
+  ecs_hbr_flat = flatten([
+    for s in var.resources[*] : [
+      for t in s.ecs[*] : [
+        for u in t.instance_name : {
+          instance_name               = u
+          ecs_server_backup_plan_name = "ecs-hbr-${u}"
+          retention                   = lookup(t, "server_backup_plan.retention", 1)
+          schedule                    = lookup(t, "server_backup_plan.schedule", "I|1708103241|P1D")
+          detail                      = lookup(t, "server_backup_plan.detail", {})
+          disabled                    = lookup(t, "server_backup_plan.disabled", false)
+          cross_account_type          = lookup(t, "server_backup_plan.cross_account_type", null)
+          cross_account_user_id       = lookup(t, "server_backup_plan.cross_account_user_id", null)
+          cross_account_role_name     = lookup(t, "server_backup_plan.cross_account_role_name", null)
+        }
+      ] if can(t.server_backup_plan)
+    ]
+  ])
   ecs_disk_flat = flatten([
     for s in var.resources[*] : [
       for t in s.ecs[*] : [
@@ -79,7 +96,7 @@ locals {
             display_name                 = s.resource_manager_resource_group.display_name
             instance_name                = u
             zone_id                      = t.zone_id
-            category                     = lookup(v, "category", "cloud_auto")
+            category                     = lookup(v, "category", "cloud_essd")
             delete_auto_snapshot         = lookup(v, "delete_auto_snapshot", false)
             delete_with_instance         = lookup(v, "delete_with_instance", false)
             description                  = lookup(v, "description", null)
@@ -89,7 +106,7 @@ locals {
             encrypted                    = lookup(v, "encrypted", null)
             kms_key_id                   = lookup(v, "kms_key_id", null)
             payment_type                 = lookup(v, "payment_type", "PayAsYouGo")
-            performance_level            = lookup(v, "performance_level", "PL1")
+            performance_level            = lookup(v, "performance_level", "PL0")
             tags                         = lookup(v, "tags", {})
             size                         = v.size
             snapshot_id                  = lookup(v, "snapshot_id", null)
