@@ -13,7 +13,7 @@ locals {
         cidr_block   = t.cidr_block
         vpc_name     = t.vpc_name
       }
-    ]
+    ] if can(s.vpc)
   ])
   security_group_flat = flatten([
     for s in var.resources[*] : [
@@ -28,7 +28,7 @@ locals {
           tags                = lookup(u, "tags", {})
         }
       ] if can(t.security_group)
-    ]
+    ] if can(s.vpc)
   ])
   security_group_rule_flat = flatten([
     for s in var.resources[*] : [
@@ -51,6 +51,6 @@ locals {
           }
         ] if can(u.rule)
       ] if can(t.security_group)
-    ]
+    ] if can(s.vpc)
   ])
 }
