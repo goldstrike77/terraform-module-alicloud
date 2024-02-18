@@ -1,4 +1,4 @@
-# 获取存储桶全局命名随时数。
+# 获取存储桶全局命名随机数。
 resource "random_string" "string" {
   for_each    = { for s in local.oss_bucket_flat : format("%s", s.bucket) => s }
   length      = 8
