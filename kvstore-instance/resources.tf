@@ -76,10 +76,10 @@ resource "alicloud_kvstore_instance" "kvstore_instance" {
   private_connection_port     = each.value.private_connection_port
   dry_run                     = each.value.dry_run
   #tde_status                  = each.value.tde_status
-  encryption_name             = each.value.encryption_name
-  encryption_key              = each.value.encryption_key
-  role_arn                    = each.value.role_arn
-  shard_count                 = each.value.shard_count
+  encryption_name = each.value.encryption_name
+  encryption_key  = each.value.encryption_key
+  role_arn        = each.value.role_arn
+  shard_count     = each.value.shard_count
 }
 
 # 配置 Redis / Memcache 实例公网连接。
@@ -96,4 +96,17 @@ resource "alicloud_kvstore_audit_log_config" "kvstore_audit_log_config" {
   instance_id = alicloud_kvstore_instance.kvstore_instance[each.key].id
   db_audit    = each.value.db_audit
   retention   = each.value.retention
+}
+
+# 配置 Redis / Memcache 账户权限。
+resource "alicloud_kvstore_account" "kvstore_account" {
+  for_each               = { for s in local.kvstore_account_flat : format("%s", s.account_name) => s }
+  account_name           = each.key
+  account_password       = each.value.account_password
+  description            = each.value.description
+  instance_id            = alicloud_kvstore_instance.kvstore_instance[each.value.db_instance_name].id
+  kms_encrypted_password = each.value.kms_encrypted_password
+  kms_encryption_context = each.value.kms_encryption_context
+  account_type           = each.value.account_type
+  account_privilege      = each.value.account_privilege
 }

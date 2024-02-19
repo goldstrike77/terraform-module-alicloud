@@ -10,11 +10,11 @@ locals {
   kvstore_instance_flat = flatten([
     for s in var.resources : [
       for t in s.kvstore : [
-        for u in t.db_instance_name : {
+        for u in t.instance : {
           display_name                = s.resource_manager_resource_group.display_name
           vpc_name                    = t.vpc
-          db_instance_name            = u
-          password                    = lookup(t, "password", null)
+          db_instance_name            = u.name
+          password                    = lookup(u, "password", null)
           kms_encrypted_password      = lookup(t, "kms_encrypted_password", null)
           kms_encryption_context      = lookup(t, "kms_encryption_context", null)
           instance_class              = lookup(t, "instance_class", "redis.shard.micro.ce")
@@ -29,7 +29,7 @@ locals {
           vswitch_name                = lookup(t, "vswitch", null)
           engine_version              = lookup(t, "engine_version", "7.0")
           tags                        = lookup(t, "tags", {})
-          security_ips                = lookup(t, "security_ips", ["0.0.0.0/0"])
+          security_ips                = lookup(t, "security_ips", ["127.0.0.1"])
           security_ip_group_attribute = lookup(t, "security_ip_group_attribute", null)
           security_ip_group_name      = lookup(t, "security_ip_group_name", null)
           security_group              = lookup(t, "security_group", null)
@@ -55,8 +55,8 @@ locals {
           backup_period               = lookup(t, "backup_period", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
           backup_time                 = lookup(t, "backup_time", "20:00Z-22:00Z")
           enable_backup_log           = lookup(t, "enable_backup_log", 0)
-          private_connection_prefix   = lookup(t, "private_connection_prefix", null)
-          private_connection_port     = lookup(t, "private_connection_port", null)
+          private_connection_prefix   = lookup(t, "private_connection_prefix", u.name)
+          private_connection_port     = lookup(t, "private_connection_port", 6379)
           dry_run                     = lookup(t, "dry_run", false)
           tde_status                  = title(lookup(t, "tde_status", "Enabled"))
           encryption_name             = lookup(t, "encryption_name", null)
@@ -67,8 +67,26 @@ locals {
           port                        = lookup(t, "port", "6379")
           db_audit                    = lookup(t, "db_audit", true)
           retention                   = lookup(t, "retention", 180)
-        } if can(t.db_instance_name)
-      ]
+        }
+      ] if can(t.instance)
+    ] if can(s.kvstore)
+  ])
+  kvstore_account_flat = flatten([
+    for s in var.resources : [
+      for t in s.kvstore : [
+        for u in t.instance : [
+          for v in u.account : {
+            db_instance_name       = u.name
+            account_name           = v.name
+            account_password       = lookup(v, "password", null)
+            description            = lookup(v, "description", null)
+            kms_encrypted_password = lookup(v, "kms_encrypted_password", null)
+            kms_encryption_context = lookup(v, "kms_encryption_context", null)
+            account_type           = "Normal"
+            account_privilege      = lookup(v, "account_privilege", "RoleReadOnly")
+          }
+        ] if can(u.account)
+      ] if can(t.instance)
     ] if can(s.kvstore)
   ])
 }
