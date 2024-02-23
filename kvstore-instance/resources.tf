@@ -22,8 +22,9 @@ data "alicloud_vswitches" "vswitches" {
 
 # 获取安全组ID。
 data "alicloud_security_groups" "security_groups" {
-  for_each   = { for s in local.kvstore_instance_flat : format("%s", s.security_group) => s... }
+  for_each   = { for s in local.security_group_flat : format("%s", s.security_group) => s... }
   name_regex = each.key
+  vpc_id     = data.alicloud_vpcs.vpcs[each.value[0].vpc_name].vpcs.0.id
 }
 
 # 创建 Redis / Memcache 实例。
@@ -48,7 +49,7 @@ resource "alicloud_kvstore_instance" "kvstore_instance" {
   security_ips                = each.value.security_ips
   security_ip_group_attribute = each.value.security_ip_group_attribute
   security_ip_group_name      = each.value.security_ip_group_name
-  security_group_id           = data.alicloud_security_groups.security_groups[each.value.security_group].groups.0.id
+  security_group_id           = join(",", [for l in each.value.security_group : data.alicloud_security_groups.security_groups[l].groups.0.id])
   private_ip                  = each.value.private_ip
   backup_id                   = each.value.backup_id
   srcdb_instance_id           = each.value.srcdb_instance_id
@@ -69,8 +70,6 @@ resource "alicloud_kvstore_instance" "kvstore_instance" {
   instance_release_protection = each.value.instance_release_protection
   global_instance_id          = each.value.global_instance_id
   global_instance             = each.value.global_instance
-  backup_period               = each.value.backup_period
-  backup_time                 = each.value.backup_time
   enable_backup_log           = each.value.enable_backup_log
   private_connection_prefix   = each.value.private_connection_prefix
   private_connection_port     = each.value.private_connection_port
@@ -109,4 +108,12 @@ resource "alicloud_kvstore_account" "kvstore_account" {
   kms_encryption_context = each.value.kms_encryption_context
   account_type           = each.value.account_type
   account_privilege      = each.value.account_privilege
+}
+
+# 配置 Redis / Memcache 备份策略。
+resource "alicloud_kvstore_backup_policy" "kvstore_backup_policy" {
+  for_each      = { for s in local.kvstore_instance_flat : format("%s", s.db_instance_name) => s if s.backup_period != [] }
+  instance_id   = alicloud_kvstore_instance.kvstore_instance[each.key].id
+  backup_period = each.value.backup_period
+  backup_time   = each.value.backup_time
 }

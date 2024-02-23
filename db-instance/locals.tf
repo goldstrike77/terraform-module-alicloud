@@ -1,5 +1,4 @@
 # 将通过变量传入的元数据映射投影到每个变量都有单独元素的集合。
-
 locals {
   resource_manager_resource_group_flat = flatten([
     for s in var.resources : {
@@ -7,14 +6,35 @@ locals {
       display_name        = s.resource_manager_resource_group.display_name
     } if can(s.resource_manager_resource_group)
   ])
+  vswitch_flat = flatten([
+    for s in var.resources : [
+      for t in s.db : [
+        for u in t.vswitch : {
+          vpc_name     = t.vpc_name
+          vswitch_name = u
+        }
+      ] if can(t.vswitch)
+    ] if can(s.db)
+  ])
+  security_group_flat = flatten([
+    for s in var.resources : [
+      for t in s.db : [
+        for u in t.security_group : {
+          vpc_name       = t.vpc
+          security_group = u
+
+        }
+      ] if can(t.security_group)
+    ] if can(s.db)
+  ])
   db_instance_flat = flatten([
     for s in var.resources : [
       for t in s.db : [
         for u in t.instance : {
           display_name                   = s.resource_manager_resource_group.display_name
           vpc_name                       = t.vpc
-          vswitch_name                   = t.vswitch
-          security_group                 = t.security_group
+          vswitch_name                   = lookup(t, "vswitch", [])
+          security_group                 = lookup(t, "security_group", [])
           engine                         = lookup(u, "engine", "MySQL")
           engine_version                 = lookup(u, "engine_version", "8.0")
           instance_type                  = lookup(u, "instance_type", "mysql.n1e.small.1")
@@ -82,6 +102,9 @@ locals {
           direction                      = lookup(u, "direction", null)
           node_id                        = lookup(u, "node_id", null)
           force                          = lookup(u, "force", null)
+          connection_prefix              = lookup(u, "connection_prefix", null)
+          connection_port                = lookup(u, "connection_port", "3306")
+          babelfish_port                 = lookup(u, "babelfish_port", null)
         }
       ] if can(t.instance)
     ] if can(s.db)

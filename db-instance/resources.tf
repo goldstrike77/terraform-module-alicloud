@@ -14,7 +14,7 @@ data "alicloud_vpcs" "vpcs" {
 
 # 获取交换机ID。
 data "alicloud_vswitches" "vswitches" {
-  for_each     = { for s in local.db_instance_flat : format("%s", s.vswitch_name) => s... }
+  for_each     = { for s in local.vswitch_flat : format("%s", s.vswitch_name) => s... }
   vswitch_name = each.key
   status       = "Available"
   vpc_id       = data.alicloud_vpcs.vpcs[each.value[0].vpc_name].vpcs.0.id
@@ -22,11 +22,12 @@ data "alicloud_vswitches" "vswitches" {
 
 # 获取安全组ID。
 data "alicloud_security_groups" "security_groups" {
-  for_each   = { for s in local.db_instance_flat : format("%s", s.security_group) => s... }
+  for_each   = { for s in local.security_group_flat : format("%s", s.security_group) => s... }
   name_regex = each.key
+  vpc_id     = data.alicloud_vpcs.vpcs[each.value[0].vpc_name].vpcs.0.id
 }
 
-# 创建 RDS 实例。
+# 创建云数据库实例。
 resource "alicloud_db_instance" "db_instance" {
   for_each                       = { for s in local.db_instance_flat : format("%s", s.instance_name) => s }
   engine                         = each.value.engine
@@ -47,7 +48,7 @@ resource "alicloud_db_instance" "db_instance" {
   auto_renew                     = each.value.auto_renew
   auto_renew_period              = each.value.auto_renew_period
   zone_id                        = each.value.zone_id
-  vswitch_id                     = data.alicloud_vswitches.vswitches[each.value.vswitch_name].vswitches.0.id
+  vswitch_id                     = join(",", [for l in each.value.vswitch_name : data.alicloud_vswitches.vswitches[l].vswitches.0.id])
   private_ip_address             = each.value.private_ip_address
   security_ips                   = each.value.security_ips
   db_instance_ip_array_name      = each.value.db_instance_ip_array_name
@@ -67,7 +68,7 @@ resource "alicloud_db_instance" "db_instance" {
   }
   force_restart               = each.value.force_restart
   tags                        = merge(var.tags, each.value.tags)
-  security_group_ids          = [data.alicloud_security_groups.security_groups[each.value.security_group].groups.0.id]
+  security_group_ids          = [join(",", [for l in each.value.security_group : data.alicloud_security_groups.security_groups[l].groups.0.id])]
   maintain_time               = each.value.maintain_time
   auto_upgrade_minor_version  = each.value.auto_upgrade_minor_version
   upgrade_time                = each.value.upgrade_time
@@ -134,4 +135,13 @@ resource "alicloud_db_instance" "db_instance" {
   direction = each.value.direction
   node_id   = each.value.node_id
   force     = each.value.force
+}
+
+# 配置云数据库实例公网连接。
+resource "alicloud_db_connection" "db_connection" {
+  for_each          = { for s in local.db_instance_flat : format("%s", s.instance_name) => s if connection_prefix != null }
+  instance_id       = alicloud_db_instance.db_instance[each.key].id
+  connection_prefix = each.value.connection_prefix
+  port              = each.value.connection_port
+  babelfish_port    = babelfish_port
 }
