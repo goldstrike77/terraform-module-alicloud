@@ -102,10 +102,62 @@ locals {
           direction                      = lookup(u, "direction", null)
           node_id                        = lookup(u, "node_id", null)
           force                          = lookup(u, "force", null)
-          connection_prefix              = lookup(u, "connection_prefix", null)
-          connection_port                = lookup(u, "connection_port", "3306")
-          babelfish_port                 = lookup(u, "babelfish_port", null)
+          # Public connection parameter.
+          connection_prefix = lookup(u, "connection_prefix", null)
+          connection_port   = lookup(u, "connection_port", "3306")
+          babelfish_port    = lookup(u, "babelfish_port", null)
+          # Backup parameter.
+          preferred_backup_period         = lookup(u, "preferred_backup_period", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+          preferred_backup_time           = lookup(u, "preferred_backup_time", "20:00Z-21:00Z")
+          backup_retention_period         = lookup(u, "backup_retention_period", 7)
+          enable_backup_log               = lookup(u, "enable_backup_log", true)
+          log_backup_retention_period     = lookup(u, "log_backup_retention_period", 7)
+          local_log_retention_hours       = lookup(u, "local_log_retention_hours", null)
+          local_log_retention_space       = lookup(u, "local_log_retention_space", null)
+          high_space_usage_protection     = title(lookup(u, "high_space_usage_protection", "Enable"))
+          log_backup_frequency            = lookup(u, "log_backup_frequency", null)
+          compress_type                   = lookup(u, "compress_type", 1)
+          archive_backup_retention_period = lookup(u, "archive_backup_retention_period", null)
+          archive_backup_keep_count       = lookup(u, "archive_backup_keep_count", null)
+          archive_backup_keep_policy      = lookup(u, "archive_backup_keep_policy", null)
+          released_keep_policy            = upper(lookup(u, "released_keep_policy", "ALL"))
+          category                        = lookup(u, "category", null)
+          backup_interval                 = lookup(u, "backup_interval", 60)
         }
+      ] if can(t.instance)
+    ] if can(s.db)
+  ])
+  db_database_flat = flatten([
+    for s in var.resources : [
+      for t in s.db : [
+        for u in t.instance : [
+          for v in u.database : {
+            instance_name = u.name
+            name          = v.name
+            character_set = lookup(v, "character_set", "utf8mb4")
+            description   = lookup(v, "description", null)
+          }
+        ] if can(u.database)
+      ] if can(t.instance)
+    ] if can(s.db)
+  ])
+  db_account_flat = flatten([
+    for s in var.resources : [
+      for t in s.db : [
+        for u in t.instance : [
+          for v in u.account : {
+            instance_name          = u.name
+            account_description    = lookup(v, "description", null)
+            account_name           = v.name
+            account_password       = v.password
+            account_type           = title(lookup(v, "type", "Normal"))
+            kms_encrypted_password = lookup(v, "kms_encrypted_password", null)
+            kms_encryption_context = lookup(v, "kms_encryption_context", null)
+            reset_permission_flag  = lookup(v, "reset_permission_flag", false)
+            privilege              = lookup(v, "privilege", "ReadOnly")
+            db_names               = lookup(v, "db_names", [])
+          }
+        ] if can(u.account)
       ] if can(t.instance)
     ] if can(s.db)
   ])
